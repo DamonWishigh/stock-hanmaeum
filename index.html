@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanmaeum Stock System</title>
+    <style>
+        :root { --primary: #1976d2; --secondary: #f44336; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .header { background: var(--primary); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header h2 { margin: 0; font-size: 1.5rem; }
+        
+        .sticky-controls { sticky: top; top: 0; background: var(--bg); z-index: 100; padding: 10px 0; }
+        select { width: 100%; padding: 15px; border-radius: 8px; border: 2px solid var(--primary); font-size: 1.1rem; margin-bottom: 10px; }
+
+        .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid var(--primary); }
+        .item-title { font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .starting-qty { font-size: 0.9rem; color: #666; margin-bottom: 12px; background: #e3f2fd; padding: 5px 10px; border-radius: 4px; display: inline-block; }
+        
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .input-box { display: flex; flex-direction: column; }
+        .input-box label { font-size: 0.8rem; margin-bottom: 4px; color: #555; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; text-align: center; font-size: 1rem; box-sizing: border-box; }
+        input:focus { border-color: var(--primary); outline: none; background: #fffde7; }
+        .waste-label { color: var(--secondary) !important; font-weight: bold; }
+
+        .btn-submit { position: fixed; bottom: 20px; left: 15px; right: 15px; padding: 18px; background: #2e7d32; color: white; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .btn-submit:active { transform: scale(0.98); }
+        #loading { text-align: center; padding: 20px; display: none; color: var(--primary); font-weight: bold; }
+        .padding-bottom { height: 100px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2>📦 Hanmaeum Stock Control</h2>
+    <p>ระบบนับสต็อกรายวัน 2026</p>
+</div>
+
+<div class="sticky-controls">
+    <label>📅 เลือกวันที่ต้องการกรอก (21-31):</label>
+    <select id="selectedDate" onchange="fetchDataFromSheet()">
+        <option value="21">วันที่ 21</option><option value="22">วันที่ 22</option><option value="23">วันที่ 23</option>
+        <option value="24">วันที่ 24</option><option value="25">วันที่ 25</option><option value="26">วันที่ 26</option>
+        <option value="27">วันที่ 27</option><option value="28">วันที่ 28</option><option value="29">วันที่ 29</option>
+        <option value="30">วันที่ 30</option><option value="31">วันที่ 31</option>
+    </select>
+</div>
+
+<div id="loading">กำลังดึงข้อมูลยอดยกมา...</div>
+<div id="item-list"></div>
+<div class="padding-bottom"></div>
+
+<button class="btn-submit" onclick="saveData()">🚀 บันทึกส่งข้อมูลเข้า Excel</button>
+
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzzeHi0NeCjYwzQ_rZ7dVSPrUQj1A_6GKxjH6zlzdIlHupuEXzlvwK6_HShVXfil1Z-Uw/exec';
+    const items = [
+    "น้ำ", "โซดา", "โค้ก", "โค้กซีโร่", "แฟนต้าน้ำส้ม", "แฟนต้าองุ่น", 
+    "สไปรท์", "สไปรท์ซีโร่", "จินโร่อิสแบล็ค", "โซจูชามิซิลเฟรช", 
+    "โซจู อีซิล กรีนเเกรป", "โซจู อีซิล พีช", "โซจู อีซิล เลม่อน", 
+    "โซจู อีซิล สตอเบอร์รี่", "เบียร์เทอร่า", "เบียร์สิงห์", "เบียร์ช้าง", 
+    "Meridian", "มัคคอลลี วอลแม ออริจินัล", "มัคคอลลี กรีนเเกรป", 
+    "อิมพัลซิบโซจู", "โกลเด้นบลู", "ริเจนซี่"
+    ];
+
+    async function fetchDataFromSheet() {
+        const date = document.getElementById('selectedDate').value;
+        const loader = document.getElementById('loading');
+        const container = document.getElementById('item-list');
+        
+        loader.style.display = 'block';
+        container.style.opacity = '0.5';
+
+        try {
+            // ดึงค่า "ยอดยกมา" (Column C, H, M...)
+            const response = await fetch(`${scriptURL}?date=${date}`);
+            const startData = await response.json();
+            
+            // ดึงค่าที่เคยพิมพ์ค้างไว้ในเครื่อง [cite: 2026-01-21]
+            const draft = JSON.parse(localStorage.getItem(`draft_v2_${date}`)) || {};
+            
+            renderItems(startData, draft);
+        } catch (e) {
+            console.error(e);
+            alert("ไม่สามารถดึงข้อมูลได้ โปรดเช็คการ Deploy Web App");
+            renderItems({}, {}); // Fallback render
+        } finally {
+            loader.style.display = 'none';
+            container.style.opacity = '1';
+        }
+    }
+
+    function renderItems(startData, draft) {
+        const container = document.getElementById('item-list');
+        container.innerHTML = '';
+        
+        items.forEach((item, index) => {
+            const startQty = startData[item] || 0;
+            const d = draft[item] || { add: 0, waste: 0, used: 0 };
+            
+            container.innerHTML += `
+                <div class="card">
+                    <div class="item-title"><span>${item}</span></div>
+                    <div class="starting-qty">ยอดยกมา: <b>${startQty}</b></div>
+                    <div class="input-grid">
+                        <div class="input-box">
+                            <label>➕ รับเพิ่ม</label>
+                            <input type="number" id="add_${index}" value="${d.add}" oninput="updateLocal()">
+                        </div>
+                        <div class="input-box">
+                            <label class="waste-label">❌ เสีย</label>
+                            <input type="number" id="waste_${index}" value="${d.waste}" oninput="updateLocal()">
+                        </div>
+                        <div class="input-box">
+                            <label>➖ ใช้ไป</label>
+                            <input type="number" id="used_${index}" value="${d.used}" oninput="updateLocal()">
+                        </div>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function updateLocal() {
+        const date = document.getElementById('selectedDate').value;
+        let draftData = {};
+        items.forEach((item, index) => {
+            draftData[item] = {
+                add: document.getElementById(`add_${index}`).value,
+                waste: document.getElementById(`waste_${index}`).value,
+                used: document.getElementById(`used_${index}`).value
+            };
+        });
+        localStorage.setItem(`draft_v2_${date}`, JSON.stringify(draftData));
+    }
+
+    async function saveData() {
+        const date = document.getElementById('selectedDate').value;
+        const btn = document.querySelector('.btn-submit');
+        btn.disabled = true;
+        btn.innerText = "⏳ กำลังบันทึก...";
+
+        let itemsToSend = [];
+        items.forEach((itemName, index) => {
+            itemsToSend.push({
+                name: itemName,
+                add: document.getElementById(`add_${index}`).value,
+                waste: document.getElementById(`waste_${index}`).value,
+                used: document.getElementById(`used_${index}`).value
+            });
+        });
+
+        try {
+            const res = await fetch(scriptURL, { 
+                method: 'POST', 
+                body: JSON.stringify({ selectedDate: date, items: itemsToSend })
+            });
+            alert("บันทึกข้อมูลวันที่ " + date + " ลง Excel เรียบร้อย!");
+        } catch (e) {
+            alert("ส่งไม่สำเร็จ: " + e);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "🚀 บันทึกส่งข้อมูลเข้า Excel";
+        }
+    }
+
+    window.onload = fetchDataFromSheet;
+</script>
+</body>
+</html>
