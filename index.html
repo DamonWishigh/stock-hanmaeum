@@ -2,169 +2,256 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hanmaeum Stock System</title>
     <style>
-        :root { --primary: #1976d2; --secondary: #f44336; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .header { background: var(--primary); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header h2 { margin: 0; font-size: 1.5rem; }
+        :root { --primary: #1976d2; --accent: #2e7d32; --danger: #d32f2f; --bg: #f5f7fa; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #333; }
         
-        .sticky-controls { sticky: top; top: 0; background: var(--bg); z-index: 100; padding: 10px 0; }
-        select { width: 100%; padding: 15px; border-radius: 8px; border: 2px solid var(--primary); font-size: 1.1rem; margin-bottom: 10px; }
-
-        .card { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid var(--primary); }
-        .item-title { font-size: 1.2rem; font-weight: bold; color: #333; margin-bottom: 8px; display: flex; justify-content: space-between; }
-        .starting-qty { font-size: 0.9rem; color: #666; margin-bottom: 12px; background: #e3f2fd; padding: 5px 10px; border-radius: 4px; display: inline-block; }
+        /* Header & Control Panel */
+        .header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        label { font-size: 0.9rem; font-weight: bold; color: #555; display: block; margin-bottom: 5px; }
+        select, input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; }
         
-        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .input-box { display: flex; flex-direction: column; }
-        .input-box label { font-size: 0.8rem; margin-bottom: 4px; color: #555; }
-        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; text-align: center; font-size: 1rem; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); outline: none; background: #fffde7; }
-        .waste-label { color: var(--secondary) !important; font-weight: bold; }
+        /* Item Management */
+        .add-item-box { background: #e8f5e9; border: 2px dashed var(--accent); }
+        .btn-add { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; margin-top: 8px; width: 100%; }
 
-        .btn-submit { position: fixed; bottom: 20px; left: 15px; right: 15px; padding: 18px; background: #2e7d32; color: white; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-        .btn-submit:active { transform: scale(0.98); }
-        #loading { text-align: center; padding: 20px; display: none; color: var(--primary); font-weight: bold; }
-        .padding-bottom { height: 100px; }
+        /* Stock Cards */
+        .stock-card { position: relative; border-left: 6px solid var(--primary); }
+        .item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .item-name { font-size: 1.1rem; font-weight: bold; }
+        .btn-remove { color: var(--danger); font-size: 0.8rem; border: 1px solid var(--danger); padding: 2px 8px; border-radius: 4px; text-decoration: none; }
+        
+        .starting-qty { font-size: 0.85rem; color: #666; margin-bottom: 10px; display: block; }
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .input-group label { font-size: 0.75rem; text-align: center; color: #777; margin-bottom: 3px; }
+        input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; text-align: center; font-size: 1.1rem; -webkit-appearance: none; }
+        
+        /* Modal Summary */
+        .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); overflow-y: auto; }
+        .modal-content { background: white; margin: 10px auto; padding: 20px; width: 90%; border-radius: 15px; box-sizing: border-box; }
+        .summary-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
+        .summary-table th, .summary-table td { border: 1px solid #eee; padding: 8px; text-align: center; }
+        .summary-table th { background: #f8f9fa; }
+
+        /* Buttons */
+        .btn-main { width: 100%; padding: 18px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: bold; margin: 20px 0; box-shadow: 0 4px 10px rgba(25, 118, 210, 0.3); }
+        .confirm-btns { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 20px; }
+        .btn-back { background: #9e9e9e; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; }
+        .btn-go { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; }
+
+        .loading-overlay { display: none; text-align: center; padding: 20px; color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2>📦 Hanmaeum Stock Control</h2>
-    <p>ระบบนับสต็อกรายวัน 2026</p>
+    <h2 style="margin:0;">📦 Hanmaeum Stock</h2>
+    <p style="margin:5px 0 0 0; font-size: 0.9rem; opacity: 0.9;">ระบบจัดการสต็อกอัจฉริยะ</p>
 </div>
 
-<div class="sticky-controls">
-    <label>📅 เลือกวันที่ต้องการกรอก (21-31):</label>
-    <select id="selectedDate" onchange="fetchDataFromSheet()">
-        <option value="21">วันที่ 21</option><option value="22">วันที่ 22</option><option value="23">วันที่ 23</option>
-        <option value="24">วันที่ 24</option><option value="25">วันที่ 25</option><option value="26">วันที่ 26</option>
-        <option value="27">วันที่ 27</option><option value="28">วันที่ 28</option><option value="29">วันที่ 29</option>
-        <option value="30">วันที่ 30</option><option value="31">วันที่ 31</option>
-    </select>
+<div class="card">
+    <label>📅 เลือกเดือน/ปี:</label>
+    <select id="monthYear" onchange="fetchInitialData()">
+        <option value="January 2026">มกราคม 2026</option>
+        <option value="February 2026">กุมภาพันธ์ 2026</option>
+        <option value="March 2026">มีนาคม 2026</option>
+        </select>
+
+    <label style="margin-top:10px;">📆 เลือกวันที่:</label>
+    <select id="selectedDate" onchange="fetchInitialData()"></select>
 </div>
 
-<div id="loading">กำลังดึงข้อมูลยอดยกมา...</div>
+<div class="card add-item-box">
+    <label>➕ เพิ่มสินค้าใหม่ (ถ้ามี):</label>
+    <input type="text" id="newItemName" placeholder="ระบุชื่อสินค้าให้ตรงกับใน Excel">
+    <button class="btn-add" onclick="addNewItem()">เพิ่มเข้าในแอป</button>
+</div>
+
+<div id="loading" class="loading-overlay">กำลังโหลดข้อมูลยอดยกมา...</div>
 <div id="item-list"></div>
-<div class="padding-bottom"></div>
 
-<button class="btn-submit" onclick="saveData()">🚀 บันทึกส่งข้อมูลเข้า Excel</button>
+<button class="btn-main" onclick="showSummary()">💾 ตรวจสอบและบันทึก</button>
+
+<div id="summaryModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0; color:var(--primary);">สรุปยอดนับ</h2>
+        <div id="summaryBody"></div>
+        <div class="confirm-btns">
+            <button class="btn-back" onclick="closeModal()">แก้ไข</button>
+            <button class="btn-go" id="confirmBtn" onclick="submitData()">ยืนยันส่งข้อมูล ✅</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzzeHi0NeCjYwzQ_rZ7dVSPrUQj1A_6GKxjH6zlzdIlHupuEXzlvwK6_HShVXfil1Z-Uw/exec';
-    const items = [
-    "น้ำ", "โซดา", "โค้ก", "โค้กซีโร่", "แฟนต้าน้ำส้ม", "แฟนต้าองุ่น", 
-    "สไปรท์", "สไปรท์ซีโร่", "จินโร่อิสแบล็ค", "โซจูชามิซิลเฟรช", 
-    "โซจู อีซิล กรีนเเกรป", "โซจู อีซิล พีช", "โซจู อีซิล เลม่อน", 
-    "โซจู อีซิล สตอเบอร์รี่", "เบียร์เทอร่า", "เบียร์สิงห์", "เบียร์ช้าง", 
-    "Meridian", "มัคคอลลี วอลแม ออริจินัล", "มัคคอลลี กรีนเเกรป", 
-    "อิมพัลซิบโซจู", "โกลเด้นบลู", "ริเจนซี่"
-    ];
+    // ⚠️ อย่าลืมใส่ URL ที่ได้จาก Google Apps Script ตรงนี้
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwn__dGraDB5MFJ-HgvaLcaZNiEbdgsyGhm1ddIZzzc-pRUo8lepiV9ATLw69k_oICpzQ/exec';
 
-    async function fetchDataFromSheet() {
+    let items = [
+    "น้ำ", "โซดา", "โค้ก", "โค้กซีโร่", "แฟนต้าน้ำส้ม", "แฟนต้าน้ำองุ่น", 
+    "สไปรท์", "สไปรท์ซีโร่", "จินโร่อีสแบล็ค", "โซจูชามิซิลเฟรช", 
+    "โซจู อีซิล กรีนเกรป", "โซจู อีซิล พีช", "โซจู อีซิล เลม่อน", 
+    "โซจู อีซิล สตอเบอร์รี่", "เบียร์เทอร่า", "เบียร์สิงห์", "เบียร์ช้าง", 
+    "Meridian", "มัคกอลลี วอลแม ออริจินัล", "มัคกอลลี กรีนเกรป", 
+    "อิมพุลชินโร โซจู", "โกลเด้นบลู", "รีเจนซี่"
+     ];
+
+    let initialStocks = {};
+
+    // สร้างวันที่ 1-31
+    const dateSel = document.getElementById('selectedDate');
+    for (let i = 1; i <= 31; i++) {
+        let opt = document.createElement('option');
+        opt.value = i; opt.text = "วันที่ " + i;
+        if (i === new Date().getDate()) opt.selected = true;
+        dateSel.appendChild(opt);
+    }
+
+    async function fetchInitialData() {
         const date = document.getElementById('selectedDate').value;
-        const loader = document.getElementById('loading');
+        const month = document.getElementById('monthYear').value;
+        const loading = document.getElementById('loading');
         const container = document.getElementById('item-list');
         
-        loader.style.display = 'block';
-        container.style.opacity = '0.5';
+        loading.style.display = 'block';
+        container.style.opacity = '0.3';
 
         try {
-            // ดึงค่า "ยอดยกมา" (Column C, H, M...)
-            const response = await fetch(`${scriptURL}?date=${date}`);
-            const startData = await response.json();
-            
-            // ดึงค่าที่เคยพิมพ์ค้างไว้ในเครื่อง [cite: 2026-01-21]
-            const draft = JSON.parse(localStorage.getItem(`draft_v2_${date}`)) || {};
-            
-            renderItems(startData, draft);
-        } catch (e) {
+            const res = await fetch(`${scriptURL}?date=${date}&monthYear=${month}`);
+            initialStocks = await res.json();
+            const draft = JSON.parse(localStorage.getItem(`draft_${month}_${date}`)) || {};
+            renderItems(initialStocks, draft);
+        } catch (e) { 
             console.error(e);
-            alert("ไม่สามารถดึงข้อมูลได้ โปรดเช็คการ Deploy Web App");
-            renderItems({}, {}); // Fallback render
+            renderItems({}, {}); 
         } finally {
-            loader.style.display = 'none';
+            loading.style.display = 'none';
             container.style.opacity = '1';
         }
     }
 
-    function renderItems(startData, draft) {
+    function renderItems(starts, drafts) {
         const container = document.getElementById('item-list');
         container.innerHTML = '';
-        
-        items.forEach((item, index) => {
-            const startQty = startData[item] || 0;
-            const d = draft[item] || { add: 0, waste: 0, used: 0 };
-            
+        items.forEach((item, i) => {
+            const d = drafts[item] || { add: 0, waste: 0, used: 0 };
             container.innerHTML += `
-                <div class="card">
-                    <div class="item-title"><span>${item}</span></div>
-                    <div class="starting-qty">ยอดยกมา: <b>${startQty}</b></div>
+                <div class="card stock-card">
+                    <div class="item-header">
+                        <div class="item-name">${item}</div>
+                        <a href="#" class="btn-remove" onclick="removeItem(${i})">ลบ</a>
+                    </div>
+                    <span class="starting-qty">ยอดยกมา: <b>${starts[item] || 0}</b></span>
                     <div class="input-grid">
-                        <div class="input-box">
-                            <label>➕ รับเพิ่ม</label>
-                            <input type="number" id="add_${index}" value="${d.add}" oninput="updateLocal()">
-                        </div>
-                        <div class="input-box">
-                            <label class="waste-label">❌ เสีย</label>
-                            <input type="number" id="waste_${index}" value="${d.waste}" oninput="updateLocal()">
-                        </div>
-                        <div class="input-box">
-                            <label>➖ ใช้ไป</label>
-                            <input type="number" id="used_${index}" value="${d.used}" oninput="updateLocal()">
-                        </div>
+                        <div class="input-group"><label>รับเพิ่ม</label><input type="number" id="add_${i}" value="${d.add}" oninput="saveDraft()"></div>
+                        <div class="input-group"><label style="color:var(--danger)">เสีย</label><input type="number" id="waste_${i}" value="${d.waste}" oninput="saveDraft()"></div>
+                        <div class="input-group"><label>ใช้ไป</label><input type="number" id="used_${i}" value="${d.used}" oninput="saveDraft()"></div>
                     </div>
                 </div>`;
         });
     }
 
-    function updateLocal() {
-        const date = document.getElementById('selectedDate').value;
-        let draftData = {};
-        items.forEach((item, index) => {
-            draftData[item] = {
-                add: document.getElementById(`add_${index}`).value,
-                waste: document.getElementById(`waste_${index}`).value,
-                used: document.getElementById(`used_${index}`).value
-            };
-        });
-        localStorage.setItem(`draft_v2_${date}`, JSON.stringify(draftData));
+    function addNewItem() {
+        const name = document.getElementById('newItemName').value.trim();
+        if (!name) return alert("กรุณาระบุชื่อสินค้า");
+        if (items.includes(name)) return alert("มีสินค้านี้อยู่แล้ว");
+        items.push(name);
+        localStorage.setItem('hanmaeum_items', JSON.stringify(items));
+        document.getElementById('newItemName').value = "";
+        fetchInitialData();
     }
 
-    async function saveData() {
-        const date = document.getElementById('selectedDate').value;
-        const btn = document.querySelector('.btn-submit');
-        btn.disabled = true;
-        btn.innerText = "⏳ กำลังบันทึก...";
+    function removeItem(index) {
+        if (confirm("ยืนยันการลบรายการนี้จากหน้าจอแอป?")) {
+            items.splice(index, 1);
+            localStorage.setItem('hanmaeum_items', JSON.stringify(items));
+            fetchInitialData();
+        }
+    }
 
-        let itemsToSend = [];
-        items.forEach((itemName, index) => {
-            itemsToSend.push({
-                name: itemName,
-                add: document.getElementById(`add_${index}`).value,
-                waste: document.getElementById(`waste_${index}`).value,
-                used: document.getElementById(`used_${index}`).value
+    function saveDraft() {
+        const date = document.getElementById('selectedDate').value;
+        const month = document.getElementById('monthYear').value;
+        let draftData = {};
+        items.forEach((item, i) => {
+            draftData[item] = { 
+                add: document.getElementById(`add_${i}`).value || 0, 
+                waste: document.getElementById(`waste_${i}`).value || 0, 
+                used: document.getElementById(`used_${i}`).value || 0 
+            };
+        });
+        localStorage.setItem(`draft_${month}_${date}`, JSON.stringify(draftData));
+    }
+
+    function showSummary() {
+        const date = document.getElementById('selectedDate').value;
+        const month = document.getElementById('monthYear').value;
+        let html = `<p><b>วันที่:</b> ${date} ${month}</p>`;
+        html += `<table class="summary-table">
+                    <thead><tr><th>สินค้า</th><th>ยกมา</th><th>รับ</th><th>เสีย</th><th>ใช้</th><th>คงเหลือ</th></tr></thead><tbody>`;
+        
+        let hasData = false;
+        items.forEach((item, i) => {
+            const s = parseInt(initialStocks[item] || 0);
+            const a = parseInt(document.getElementById(`add_${i}`).value || 0);
+            const w = parseInt(document.getElementById(`waste_${i}`).value || 0);
+            const u = parseInt(document.getElementById(`used_${i}`).value || 0);
+            const bal = s + a - w - u;
+            
+            if (a !== 0 || w !== 0 || u !== 0) {
+                hasData = true;
+                html += `<tr>
+                    <td style="text-align:left">${item}</td>
+                    <td>${s}</td>
+                    <td style="color:blue">${a}</td>
+                    <td style="color:red">${w}</td>
+                    <td>${u}</td>
+                    <td style="background:#fff9c4"><b>${bal}</b></td>
+                </tr>`;
+            }
+        });
+
+        if(!hasData) return alert("กรุณากรอกข้อมูลอย่างน้อย 1 รายการก่อนบันทึก");
+
+        document.getElementById('summaryBody').innerHTML = html + `</tbody></table>`;
+        document.getElementById('summaryModal').style.display = 'block';
+    }
+
+    function closeModal() { document.getElementById('summaryModal').style.display = 'none'; }
+
+    async function submitData() {
+        const btn = document.getElementById('confirmBtn');
+        btn.disabled = true; btn.innerText = "กำลังส่งข้อมูล...";
+        
+        const date = document.getElementById('selectedDate').value;
+        const month = document.getElementById('monthYear').value;
+        let payload = { selectedDate: date, monthYear: month, items: [] };
+
+        items.forEach((item, i) => {
+            payload.items.push({
+                name: item,
+                add: document.getElementById(`add_${i}`).value || 0,
+                waste: document.getElementById(`waste_${i}`).value || 0,
+                used: document.getElementById(`used_${i}`).value || 0
             });
         });
 
         try {
-            const res = await fetch(scriptURL, { 
-                method: 'POST', 
-                body: JSON.stringify({ selectedDate: date, items: itemsToSend })
-            });
-            alert("บันทึกข้อมูลวันที่ " + date + " ลง Excel เรียบร้อย!");
+            const response = await fetch(scriptURL, { method: 'POST', body: JSON.stringify(payload) });
+            alert("บันทึกเข้า Excel เรียบร้อยแล้ว! ✅");
+            closeModal();
         } catch (e) {
-            alert("ส่งไม่สำเร็จ: " + e);
+            alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
+            console.error(e);
         } finally {
-            btn.disabled = false;
-            btn.innerText = "🚀 บันทึกส่งข้อมูลเข้า Excel";
+            btn.disabled = false; btn.innerText = "ยืนยันส่งข้อมูล ✅";
         }
     }
 
-    window.onload = fetchDataFromSheet;
+    window.onload = fetchInitialData;
 </script>
 </body>
 </html>
